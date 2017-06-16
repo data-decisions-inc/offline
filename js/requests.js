@@ -61,10 +61,10 @@
       });
       if (Offline.getOption('deDupBody')) {
         body = request.body;
-        if (body.toString() === '[object Object]') {
+        if (((body && body.toString()) || '[object Null]') === '[object Object]') {
           body = JSON.stringify(body);
         } else {
-          body = body.toString();
+          body = (body && body.toString()) || '[object Null]';
         }
         requests[(request.type.toUpperCase()) + " - " + url + " - " + body] = request;
       } else {

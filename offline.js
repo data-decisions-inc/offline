@@ -1,4 +1,4 @@
-/*! offline-js 0.7.19 */
+/*! offline-js 0.7.20 */
 (function() {
   var Offline, checkXHR, defaultOptions, extendNative, grab, handlers, init;
   extendNative = function(to, from) {
@@ -187,7 +187,7 @@
       for (Offline.trigger("requests:flush"), requests = {}, i = 0, len = held.length; i < len; i++) request = held[i], 
       url = request.url.replace(/(\?|&)_=[0-9]+/, function(match, chr) {
         return "?" === chr ? chr :"";
-      }), Offline.getOption("deDupBody") ? (body = request.body, body = "[object Object]" === body.toString() ? JSON.stringify(body) :body.toString(), 
+      }), Offline.getOption("deDupBody") ? (body = request.body, body = "[object Object]" === (body && body.toString() || "[object Null]") ? JSON.stringify(body) :body && body.toString() || "[object Null]", 
       requests[request.type.toUpperCase() + " - " + url + " - " + body] = request) :requests[request.type.toUpperCase() + " - " + url] = request;
       for (key in requests) request = requests[key], makeRequest(request);
       return clear();
