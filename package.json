@@ -1,10 +1,11 @@
 {
   "name": "offline-js",
-  "version": "0.7.19",
+  "version": "0.7.20",
   "description": "Automatically detect when a browser is offline",
   "authors": [
     "Adam Schwartz <adam.flynn.schwartz@gmail.com>",
-    "Zack Bloom <zackbloom@gmail.com>"
+    "Zack Bloom <zackbloom@gmail.com>",
+    "Bri Prebilic Cole <bri@datadecisions.net>",
   ],
   "repository": {
     "type": "git",

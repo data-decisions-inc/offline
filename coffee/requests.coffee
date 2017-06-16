@@ -41,10 +41,10 @@ flush = ->
 
     if Offline.getOption('deDupBody')
       body = request.body
-      if body.toString() is '[object Object]'
+      if ((body and body.toString()) or '[object Null]') is '[object Object]'
         body = JSON.stringify(body)
       else
-        body = body.toString()
+        body = ((body and body.toString()) or '[object Null]')
       requests["#{ request.type.toUpperCase() } - #{ url } - #{ body }"] = request;
     else
       requests["#{ request.type.toUpperCase() } - #{ url }"] = request
