@@ -1,8 +1,3 @@
-___
-
-**This project isn't actively maintained.**
-___
-
 Offline
 ======
 
@@ -144,3 +139,78 @@ Browser Support
 Modern Chrome, Firefox, Safari and IE8+
 
 Note that not all browsers (including Safari and old IE) support the offline events, forcing Offline to use less accurate methods of detection.
+
+Angular 1.6.3 Compatibility
+---------------------------
+
+If you have the "Cannot read property 'statusText' of null" Angular error when coming back online, check out this
+solution. I discovered this error when attempting to send POST requests while offline:
+
+1. Angular, as part of the $http implementation, will try to complete the request when the application is offline.
+    The app is offline though, so Angular gracefully resolves the request with an error and cleans up, setting its
+    xhr variable to null.
+2. Then OfflineJS runs, realizes the application is offline, and stores the request in a queue to be sent when
+    connection is restored.
+3. Connection is restored and OfflineJS sends the items in its queue on its onload function.
+4. Angular's xhr.onload function is triggered (not sure why), but the xhr variable is null now, causing the
+    "Cannot read property..." error.
+
+So, in order to fix this, you can use an Angular interceptor workaround. Instead of using OfflineJS's queue to send
+requests, you can use Angular interceptors with `$q` to implement the requests queue instead, which both allows you more
+flexibility for handling requests and still lets you use the OfflineJS styles and connection test functionality.
+
+Set the Offline options. This means OfflineJS will no longer auto-send requests for you:
+
+```
+Offline.options = {
+    requests: false
+};
+```
+
+Write an interceptor using $q to handle any offline requests; example is below. Also see
+[this GIST](https://gist.github.com/bripc/e6e8118028baf5465f7d688ae467251a).
+
+```
+(function () {
+    'use strict';
+    angular
+        .module('app')
+        .factory('OfflineInterceptor', ["$q", function ($q) {
+           // queue for saving requests to be sent to the server when connection is down
+            var queue = [];
+            return {
+                request: function (config) {
+                    var deferred;
+                    // Offline still checks for offline state
+                    Offline.check();
+                    // when Offline determines the connection is back up, send all the requests in the queue
+                    Offline.on("up", function () {
+                        // if they sent requests while offline, resend them now
+                        if (queue.length) {
+                            angular.forEach(queue, function (req) {
+                                req.promise.resolve(req.config);
+                            });
+                            queue = [];
+                        }
+                    });
+                    if (Offline.state === "down") {
+                        // in this example, saving only non-get requests to send to the server later
+                        if (config.method !== "GET") {
+                            // create and return a promise for resolving once the connection is restored
+                            deferred = $q.defer();
+                            queue.push({
+                                config: config,
+                                promise: deferred
+                            });
+                            return deferred.promise;
+                        }
+                    }
+                    return config;
+                }
+            };
+        }])
+        .config(["$httpProvider", function ($httpProvider) {
+            $httpProvider.interceptors.push('OfflineInterceptor');
+        }]);
+}());
+```
